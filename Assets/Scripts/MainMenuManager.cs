@@ -12,20 +12,19 @@ using UnityEngine.SceneManagement;
 
 public class MainMenuManager : MonoBehaviour
 {
-    [Header("UI ���")]
-    public GameObject mainPanel;
-    public GameObject modeSelectPanel;
-    public GameObject levelSelectPanel;
-    public GameObject settingsPanel;
-    public GameObject chapterSelectPanel;
+    #region 序列化字段 / Serialized Fields
+    [Header("UI 面板 / UI Panels")]
+    public GameObject mainPanel;           // 主面板 / Main panel
+    public GameObject modeSelectPanel;     // 模式选择面板 / Mode selection panel
+    public GameObject levelSelectPanel;    // 关卡选择面板 / Level selection panel
+    public GameObject settingsPanel;       // 设置面板 / Settings panel
+    public GameObject chapterSelectPanel;  // 章节选择面板 / Chapter selection panel
 
-    // --- ���������޸� ��1�������ӡ��ټ����������á����� ---
-    [Header("�˳�����")]
-    public GameObject goodbyePanel; // <--- ������Ҫ���� Unity �ﴴ��һ��������
+    [Header("退出确认 / Exit Confirmation")]
+    public GameObject goodbyePanel;        // 退出确认面板（需在Unity中创建）/ Exit confirmation panel (create in Unity)
 
-    // --- �������´��� ��1.5�������ӡ��༭�������������á����� ---
-    [Header("�༭��")]
-    public string levelEditorSceneName = "LevelEditorScene"; // ����Ըĳ���ʵ�ʵĳ�����
+    [Header("编辑器 / Editor")]
+    public string levelEditorSceneName = "LevelEditorScene"; // 关卡编辑器场景名 / Level editor scene name
 
     [Header("管理器引用 / Manager References")]
     public LevelSelectManager levelSelectManager;        // 关卡选择管理器 / Level select manager

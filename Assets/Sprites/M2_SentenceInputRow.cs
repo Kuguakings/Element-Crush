@@ -1,4 +1,4 @@
-// M2_SentenceInputRow.cs (V3.0.4 - ×îÖÕÎÈ¶¨°æ)
+// M2_SentenceInputRow.cs (V3.0.4 - ï¿½ï¿½ï¿½ï¿½ï¿½È¶ï¿½ï¿½ï¿½)
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -7,19 +7,19 @@ using TMPro;
 
 public class M2_SentenceInputRow : MonoBehaviour
 {
-    [Header("UI ÒýÓÃ")]
+    [Header("UI ï¿½ï¿½ï¿½ï¿½")]
     public TMP_InputField sentenceIdInput;
     public TMP_InputField fullSentenceInput;
-    public Toggle selectionToggle; // ¡¾ÐÂ¡¿Toggle ÒýÓÃ
+    public Toggle selectionToggle; // ï¿½ï¿½ï¿½Â¡ï¿½Toggle ï¿½ï¿½ï¿½ï¿½
 
-    [Header("Ñ¡ÖÐ¸ßÁÁ")]
+    [Header("Ñ¡ï¿½Ð¸ï¿½ï¿½ï¿½")]
     public Image selectionHighlight;
 
-    private LevelEditorManager editorManager;
+    private LevelEditor_Mode2 mode2Controller;
     private int internal_sentenceId;
-    private string internal_fullSentence; // ¡¾ÐÂ¡¿ÓÃÓÚÊµÊ±¼ÇÂ¼ÊäÈëµÄË½ÓÐ±äÁ¿
+    private string internal_fullSentence; // ï¿½ï¿½ï¿½Â¡ï¿½ï¿½ï¿½ï¿½ï¿½ÊµÊ±ï¿½ï¿½Â¼ï¿½ï¿½ï¿½ï¿½ï¿½Ë½ï¿½Ð±ï¿½ï¿½ï¿½
 
-    private bool isManagerUpdatingToggle = false; // ¡¾ÐÂ¡¿·ÀÖ¹ Toggle ÊÂ¼þÑ­»·´¥·¢µÄËø
+    private bool isManagerUpdatingToggle = false; // ï¿½ï¿½ï¿½Â¡ï¿½ï¿½ï¿½Ö¹ Toggle ï¿½Â¼ï¿½Ñ­ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
     void Awake()
     {
@@ -29,31 +29,31 @@ public class M2_SentenceInputRow : MonoBehaviour
         }
     }
 
-    public void Setup(LevelEditorManager manager, int id, Mode2Content data)
+    public void Setup(LevelEditor_Mode2 controller, int id, Mode2Content data)
     {
-        this.editorManager = manager;
+        this.mode2Controller = controller;
         this.internal_sentenceId = id;
 
-        // 1. Ìî³äÊý¾Ý²¢³õÊ¼»¯ÄÚ²¿±äÁ¿
+        // 1. ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý²ï¿½ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½Ú²ï¿½ï¿½ï¿½ï¿½ï¿½
         sentenceIdInput.text = id.ToString();
         if (data != null)
         {
             fullSentenceInput.text = data.fullSentence;
-            internal_fullSentence = data.fullSentence; // ¡¾ÐÞ¸´µã¡¿
+            internal_fullSentence = data.fullSentence; // ï¿½ï¿½ï¿½Þ¸ï¿½ï¿½ã¡¿
         }
         else
         {
             fullSentenceInput.text = "";
-            internal_fullSentence = ""; // ¡¾ÐÞ¸´µã¡¿
+            internal_fullSentence = ""; // ï¿½ï¿½ï¿½Þ¸ï¿½ï¿½ã¡¿
         }
 
-        // 2. °ó¶¨¡°Ôà¼ì²é¡±ºÍ¡°ÊµÊ±¼ÇÂ¼¡±
+        // 2. ï¿½ó¶¨¡ï¿½ï¿½ï¿½ï¿½é¡±ï¿½Í¡ï¿½ÊµÊ±ï¿½ï¿½Â¼ï¿½ï¿½
         if (fullSentenceInput != null)
         {
             fullSentenceInput.onValueChanged.AddListener(OnSentenceChanged);
         }
 
-        // 3. °ó¶¨ Toggle ÊÂ¼þ
+        // 3. ï¿½ï¿½ Toggle ï¿½Â¼ï¿½
         if (selectionToggle != null)
         {
             selectionToggle.onValueChanged.AddListener(OnToggleChanged);
@@ -64,28 +64,28 @@ public class M2_SentenceInputRow : MonoBehaviour
 
     private void OnToggleChanged(bool isOn)
     {
-        if (isManagerUpdatingToggle) return; // ºöÂÔ Manager ´¥·¢µÄÊÂ¼þ
+        if (isManagerUpdatingToggle) return; // ï¿½ï¿½ï¿½ï¿½ Manager ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Â¼ï¿½
 
-        if (editorManager != null)
+        if (mode2Controller != null)
         {
-            editorManager.M2_OnSentenceToggleChanged(this, isOn);
+            mode2Controller.OnSentenceToggleChanged(this, isOn);
         }
     }
 
     /// <summary>
-    /// µ±¾ä×Ó±»±à¼­Ê±£¬¡¾ÊµÊ±¼ÇÂ¼×îÐÂÖµ¡¿
+    /// ï¿½ï¿½ï¿½ï¿½ï¿½Ó±ï¿½ï¿½à¼­Ê±ï¿½ï¿½ï¿½ï¿½ÊµÊ±ï¿½ï¿½Â¼ï¿½ï¿½ï¿½ï¿½Öµï¿½ï¿½
     /// </summary>
     private void OnSentenceChanged(string s)
     {
-        internal_fullSentence = s; // ¡¾ÐÞ¸´µã¡¿: ÊµÊ±¼ÇÂ¼×îÐÂÊäÈë
-        if (editorManager != null)
+        internal_fullSentence = s; // ï¿½ï¿½ï¿½Þ¸ï¿½ï¿½ã¡¿: ÊµÊ±ï¿½ï¿½Â¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+        if (mode2Controller != null)
         {
-            editorManager.MarkLevelAsDirty();
+            mode2Controller.MarkLevelAsDirty();
         }
     }
 
     /// <summary>
-    /// ¹© Manager µ÷ÓÃÀ´ÉèÖÃ Toggle ×´Ì¬ (°üº¬Ëø»úÖÆ)
+    /// ï¿½ï¿½ Manager ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Toggle ×´Ì¬ (ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½)
     /// </summary>
     public void SetToggleState(bool isOn)
     {
@@ -96,7 +96,7 @@ public class M2_SentenceInputRow : MonoBehaviour
             selectionToggle.isOn = isOn;
         }
 
-        // ÐÞ¸´ÁË¡°Òþ²ØÕû¸öÐÐ¡±µÄ Bug
+        // ï¿½Þ¸ï¿½ï¿½Ë¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð¡ï¿½ï¿½ï¿½ Bug
         if (selectionHighlight != null)
         {
             selectionHighlight.enabled = isOn;
@@ -111,26 +111,26 @@ public class M2_SentenceInputRow : MonoBehaviour
     }
 
     /// <summary>
-    /// ¡¾ÐÂ¡¿: ·µ»ØÊµÊ±¼ÇÂ¼µÄÊäÈëÄÚÈÝ£¬ÐÞ¸´ÁË¡°¶ÁÈ¡¿Õ×Ö·û´®¡±µÄ Bug
+    /// ï¿½ï¿½ï¿½Â¡ï¿½: ï¿½ï¿½ï¿½ï¿½ÊµÊ±ï¿½ï¿½Â¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý£ï¿½ï¿½Þ¸ï¿½ï¿½Ë¡ï¿½ï¿½ï¿½È¡ï¿½ï¿½ï¿½Ö·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Bug
     /// </summary>
     public string GetFullSentence()
     {
-        return internal_fullSentence; // ¡¾ÐÞ¸´µã¡¿: ·µ»ØÄÚ²¿±äÁ¿
+        return internal_fullSentence; // ï¿½ï¿½ï¿½Þ¸ï¿½ï¿½ã¡¿: ï¿½ï¿½ï¿½ï¿½ï¿½Ú²ï¿½ï¿½ï¿½ï¿½ï¿½
     }
 
     /// <summary>
-    /// ¡¾¡¾¡¾ÐÂº¯Êý¡¿¡¿¡¿: ¹© Manager µ÷ÓÃ£¬ÓÃÓÚÔÚ±£´æºó¸üÐÂ×ó²à¾ä×ÓµÄÎÄ±¾
+    /// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Âºï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½: ï¿½ï¿½ Manager ï¿½ï¿½ï¿½Ã£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ú±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Óµï¿½ï¿½Ä±ï¿½
     /// </summary>
     public void SetFullSentenceText(string text)
     {
-        // 1. ¸üÐÂÄÚ²¿Êý¾Ý (È·±£ GetFullSentence() ·µ»Ø×îÐÂÖµ)
+        // 1. ï¿½ï¿½ï¿½ï¿½ï¿½Ú²ï¿½ï¿½ï¿½ï¿½ï¿½ (È·ï¿½ï¿½ GetFullSentence() ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Öµ)
         this.internal_fullSentence = text;
 
-        // 2. ¸üÐÂÊÓ¾õ×Ö¶Î (×ó²àÊäÈë¿ò)
+        // 2. ï¿½ï¿½ï¿½ï¿½ï¿½Ó¾ï¿½ï¿½Ö¶ï¿½ (ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½)
         if (fullSentenceInput != null)
         {
             fullSentenceInput.text = text;
         }
-        // ×¢Òâ: ÕâÀï²»ÐèÒª MarkLevelAsDirty£¬ÒòÎªÎÒÃÇÕýÔÚ±£´æ¡£
+        // ×¢ï¿½ï¿½: ï¿½ï¿½ï¿½ï²»ï¿½ï¿½Òª MarkLevelAsDirtyï¿½ï¿½ï¿½ï¿½Îªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ú±ï¿½ï¿½æ¡£
     }
 }

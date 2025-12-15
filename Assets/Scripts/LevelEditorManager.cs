@@ -7,7 +7,6 @@ using TMPro;
 using UnityEngine.SceneManagement;
 using System.Linq;
 using System;
-using System.Runtime.InteropServices;
 
 public class LevelEditorManager : MonoBehaviour
 {
@@ -163,9 +162,6 @@ public class LevelEditorManager : MonoBehaviour
     private bool isDirty_M2 = false;
 
     private GameObject currentEditingCell_M1; // 用于记住我们正在编辑哪个单元格
-
-    [DllImport("__Internal")]
-    private static extern void JsShowNativePrompt(string existingText, string objectName, string callbackSuccess);
 
     #endregion
 
@@ -661,28 +657,28 @@ public class LevelEditorManager : MonoBehaviour
         input1.text = id;
         input1.onValueChanged.AddListener(OnAnyCellChanged);
         M1_EditorCell cellScript1 = cell1.GetComponent<M1_EditorCell>() ?? cell1.AddComponent<M1_EditorCell>();
-        cellScript1.Setup(this);
+        // cellScript1.Setup(this); // 已迁移到LevelEditor_Mode1
 
         GameObject cell2 = Instantiate(m1EditorCellPrefab, container);
         TMP_InputField input2 = cell2.GetComponent<TMP_InputField>();
         input2.text = hanzi;
         input2.onValueChanged.AddListener(OnAnyCellChanged);
         M1_EditorCell cellScript2 = cell2.GetComponent<M1_EditorCell>() ?? cell2.AddComponent<M1_EditorCell>();
-        cellScript2.Setup(this);
+        // cellScript2.Setup(this); // 已迁移到LevelEditor_Mode1
 
         GameObject cell3 = Instantiate(m1EditorCellPrefab, container);
         TMP_InputField input3 = cell3.GetComponent<TMP_InputField>();
         input3.text = pinyin;
         input3.onValueChanged.AddListener(OnAnyCellChanged);
         M1_EditorCell cellScript3 = cell3.GetComponent<M1_EditorCell>() ?? cell3.AddComponent<M1_EditorCell>();
-        cellScript3.Setup(this);
+        // cellScript3.Setup(this); // 已迁移到LevelEditor_Mode1
 
         GameObject cell4 = Instantiate(m1EditorCellPrefab, container);
         TMP_InputField input4 = cell4.GetComponent<TMP_InputField>();
         input4.text = english;
         input4.onValueChanged.AddListener(OnAnyCellChanged);
         M1_EditorCell cellScript4 = cell4.GetComponent<M1_EditorCell>() ?? cell4.AddComponent<M1_EditorCell>();
-        cellScript4.Setup(this);
+        // cellScript4.Setup(this); // 已迁移到LevelEditor_Mode1
 
         if (isNewCollection) MarkLevelAsDirty();
     }
@@ -873,12 +869,7 @@ public class LevelEditorManager : MonoBehaviour
         // 调用我们新的 JavaScript 原生输入框
         // 它会把结果发回到 "M1_ReceivePastedTextFromHtml" 函数
         Debug.Log("正在调用 JsShowHtmlTextInput (M1)...");
-#if UNITY_WEBGL && !UNITY_EDITOR
-    JsShowNativePrompt("", this.gameObject.name, "M1_ReceivePastedTextFromHtml");
-#else
-        Debug.LogWarning("【编辑器模式】：JsShowHtmlTextInput 无法在编辑器中运行。");
-        statusText.text = "请在 WebGL 构建中测试此功能。";
-#endif
+        NativeBridge.Instance.ShowNativePrompt("", this.gameObject.name, "M1_ReceivePastedTextFromHtml");
     }
     // 【【【【【【 替换结束 】】】】】】
 
@@ -1233,7 +1224,7 @@ public class LevelEditorManager : MonoBehaviour
     {
         GameObject rowGO = Instantiate(m2SentenceInputPrefab, sentenceInputContainer_M2);
         M2_SentenceInputRow rowUI = rowGO.GetComponent<M2_SentenceInputRow>();
-        if (rowUI != null) rowUI.Setup(this, id, data);
+        // if (rowUI != null) rowUI.Setup(this, id, data); // 已迁移到LevelEditor_Mode2
         return rowUI;
     }
 
@@ -1409,7 +1400,7 @@ public class LevelEditorManager : MonoBehaviour
     {
         GameObject rowGO = Instantiate(m2WordRowPrefab, wordListContainer_M2);
         M2_WordRow rowUI = rowGO.GetComponent<M2_WordRow>();
-        if (rowUI != null) rowUI.Setup(this, order, word);
+        // if (rowUI != null) rowUI.Setup(this, order, word); // 已迁移到LevelEditor_Mode2
     }
 
     private void M2_ClearWordList()
@@ -1592,14 +1583,7 @@ public class LevelEditorManager : MonoBehaviour
     private void M2_OnClick_BatchPaste()
     {
         Debug.Log("正在调用 JsShowNativePrompt (M2)...");
-#if UNITY_WEBGL && !UNITY_EDITOR
-        // 【修改点】改为调用原生 Native Prompt
-        // 注意：这里只传 3 个参数 (内容, 对象名, 回调函数名)
-        JsShowNativePrompt("", this.gameObject.name, "M2_ReceivePastedTextFromHtml");
-#else
-        Debug.LogWarning("【编辑器模式】：JsShowNativePrompt 无法在编辑器中运行。");
-        if (statusText != null) statusText.text = "请在 WebGL 构建中测试此功能。";
-#endif
+        NativeBridge.Instance.ShowNativePrompt("", this.gameObject.name, "M2_ReceivePastedTextFromHtml");
     }
 
     private void M2_OnPasteInputChanged(string text)
@@ -1825,14 +1809,7 @@ public class LevelEditorManager : MonoBehaviour
     {
         currentEditingCell_M1 = cell;
         Debug.Log($"[LevelEditorManager] 正在请求编辑单元格，当前文本: {currentText}");
-#if UNITY_WEBGL && !UNITY_EDITOR
-        // 【修改点】改为调用原生 Native Prompt
-        // 注意：这里只传 3 个参数 (当前文本, 对象名, 回调函数名)
-        JsShowNativePrompt(currentText, this.gameObject.name, "M1_ReceiveCellEditText");
-#else
-        Debug.LogWarning("【编辑器模式】：JsShowNativePrompt 无法在编辑器中运行。");
-        if (statusText != null) statusText.text = "请在 WebGL 构建中测试此功能。";
-#endif
+        NativeBridge.Instance.ShowNativePrompt(currentText, this.gameObject.name, "M1_ReceiveCellEditText");
     }
 
     /// <summary>

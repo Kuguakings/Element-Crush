@@ -2,11 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using TMPro;
-using UnityEngine.UI;
-using System.Runtime.InteropServices;
 using UnityEngine.SceneManagement;
-using System.Linq;
 
 // =========================================================
 // 1. 数据结构定义 (完整保留)
@@ -43,10 +39,13 @@ public class SingleDocResponse<T>
 [Serializable]
 public class Mode1Content
 {
-    public int groupId;
-    public string hanzi;
-    public string pinyin;
-    public string english;
+    public int row;
+    public int col;
+    public string text;
+    public int groupId; // 兼容旧数据
+    public string hanzi; // 兼容旧数据
+    public string pinyin; // 兼容旧数据
+    public string english; // 兼容旧数据
 }
 
 [Serializable]
@@ -98,35 +97,11 @@ public class TcbManager : MonoBehaviour
     private const string PREF_AUTO_LOGIN_NICKNAME = "AutoLogin_Nickname";
     private const string PREF_IS_ADMIN = "AutoLogin_IsAdmin";
 
-    #region JS 桥梁
-    [DllImport("__Internal")] private static extern void JsRegisterUser(string e, string p, string o, string s, string r);
-    [DllImport("__Internal")] private static extern void JsLoginUser(string e, string p, string o, string s, string r);
-    [DllImport("__Internal")] private static extern void JsLogoutUser();
-    [DllImport("__Internal")] private static extern void JsCheckAdminStatus(string u, string o, string s, string r);
-    [DllImport("__Internal")] private static extern void JsGetLevels(string o, string s, string r);
-    [DllImport("__Internal")] private static extern void JsUploadNewLevel(string d, string j, string o, string s, string r);
-    [DllImport("__Internal")] private static extern void JsGetUserProfile(string u, string o, string s, string r);
-    [DllImport("__Internal")] private static extern void JsCreateUserProfile(string u, string n, string o, string s, string r);
-    [DllImport("__Internal")] private static extern void JsUpdateUsername(string u, string n, string o, string s, string r);
-    [DllImport("__Internal")] private static extern void JsDbGetCollection(string coll, string reqId, string o, string s, string e);
-    [DllImport("__Internal")] private static extern void JsDbSetDocument(string coll, string docId, string json, string reqId, string o, string s, string e);
-    [DllImport("__Internal")] private static extern void JsDbAddDocument(string coll, string json, string reqId, string o, string s, string e);
-    [DllImport("__Internal")] private static extern void JsDbDeleteDocument(string coll, string docId, string reqId, string o, string s, string e);
-    [DllImport("__Internal")] private static extern void JsDbGetDocument(string coll, string docId, string reqId, string o, string s, string e);
-    #endregion
-
-    [Header("UI 元素")]
-    public TMP_InputField emailInput;
-    public TMP_InputField passwordInput;
-    public Button registerButton;
-    public Button loginButton;
-    public TextMeshProUGUI statusText;
-
-    public CanvasGroup loginCanvasGroup;
-    public CanvasGroup mainMenuObjectGroup;
-    public Button levelEditorButton;
-
-    public float panelFadeDuration = 0.3f;
+    // 事件系统：用于通知 UI 更新
+    public event Action OnLoginSuccess;
+    public event Action<string> OnLoginFailed;
+    public event Action<bool> OnAuthStateChanged; // 参数为 isLoggedIn
+    public event Action<string> OnStatusMessageChanged;
 
     private Dictionary<string, Action<string>> dbSuccessCallbacks = new Dictionary<string, Action<string>>();
     private Dictionary<string, Action<string>> dbErrorCallbacks = new Dictionary<string, Action<string>>();
@@ -160,16 +135,14 @@ public class TcbManager : MonoBehaviour
         CurrentUid = "test_editor_user_001"; 
         CurrentNickname = "Editor Admin";
         if (LevelManager.instance != null) LevelManager.IsAdmin = true;
-        if (levelEditorButton != null) levelEditorButton.gameObject.SetActive(true);
-        
-        SetCanvasGroupState(loginCanvasGroup, false);
-        SetCanvasGroupState(mainMenuObjectGroup, true);
         
         if (AllLevels == null) AllLevels = new LevelDataCollection();
         isLoggedIn = true;
+        
+        // 触发事件
+        OnAuthStateChanged?.Invoke(true);
 #else
         // 【核心修复】真机/WebGL 模式下，手动触发一次场景加载逻辑
-        // 这解决了“刚进游戏时 OnSceneLoaded 可能因为注册晚了没触发”的问题
         if (SceneManager.GetActiveScene().name == "MainMenu")
         {
             Debug.Log("[TcbManager] 手动触发主菜单初始化...");
@@ -190,54 +163,20 @@ public class TcbManager : MonoBehaviour
         {
             Debug.Log($"[TcbManager] 进入主菜单。当前登录状态: {isLoggedIn}");
 
-            // 1. 绑定 UI
-            BindUIComponentsSafe();
-
-            // 2. 【核心修复】检查自动登录
-            // 如果还没登录，就尝试读缓存
+            // 检查自动登录
             if (!isLoggedIn)
             {
                 CheckAutoLogin();
             }
-
-            // 3. 刷新 UI
-            UpdateUIState();
-        }
-    }
-
-    private void UpdateUIState()
-    {
-        // 双重保险：如果引用丢了，再找一次
-        if (loginCanvasGroup == null || mainMenuObjectGroup == null) BindUIComponentsSafe();
-
-        if (isLoggedIn)
-        {
-            Debug.Log("[TcbManager] 已登录，隐藏登录框，显示主菜单。");
-            // 已登录：关登录页，开主页
-            SetCanvasGroupState(loginCanvasGroup, false);
-            SetCanvasGroupState(mainMenuObjectGroup, true);
-
-            var profile = FindObjectOfType<UserProfileManager>();
-            if (profile != null) profile.UpdateUI();
-
-            if (levelEditorButton) levelEditorButton.gameObject.SetActive(IsAdmin);
-
-            // 如果数据没加载，静默加载
-            if (AllLevels == null || AllLevels.levels.Count == 0)
+            else
             {
-                LoadLevelsSilent();
+                // 触发事件，通知 UI 更新
+                OnAuthStateChanged?.Invoke(true);
             }
         }
-        else
-        {
-            Debug.Log("[TcbManager] 未登录，显示登录框。");
-            // 未登录：开登录页，关主页
-            SetCanvasGroupState(loginCanvasGroup, true);
-            SetCanvasGroupState(mainMenuObjectGroup, false);
-
-            if (statusText) statusText.text = "请输入账号密码";
-        }
     }
+
+
 
     private void CheckAutoLogin()
     {
@@ -253,18 +192,25 @@ public class TcbManager : MonoBehaviour
 
             // 标记为已登录
             isLoggedIn = true;
+            
+            // 触发事件
+            OnAuthStateChanged?.Invoke(true);
 
             // 触发静默校验（不挡UI）
             SilentReauth();
+            
+            // 加载关卡数据
+            if (AllLevels == null || AllLevels.levels.Count == 0)
+            {
+                LoadLevelsSilent();
+            }
         }
     }
 
     private void SilentReauth()
     {
-#if UNITY_WEBGL && !UNITY_EDITOR
-        JsCheckAdminStatus(CurrentUid, gameObject.name, "OnAdminCheckResult_Silent", "OnAuthError_Silent");
-        JsGetUserProfile(CurrentUid, gameObject.name, "OnGetUserProfileSuccess", "OnAuthError_Silent");
-#endif
+        NativeBridge.Instance.CheckAdminStatus(CurrentUid, "OnAdminCheckResult_Silent", gameObject.name, "OnAuthError_Silent");
+        NativeBridge.Instance.GetUserProfile(CurrentUid, gameObject.name, "OnGetUserProfileSuccess", "OnAuthError_Silent");
     }
 
     // 静默回调
@@ -272,165 +218,57 @@ public class TcbManager : MonoBehaviour
     public void OnAuthError_Silent(string err) { Debug.LogWarning("静默更新失败: " + err); }
 
 
-    private void SetCanvasGroupState(CanvasGroup cg, bool visible)
+
+
+    /// <summary>
+    /// 注册新用户
+    /// </summary>
+    public void Register(string email, string password)
     {
-        if (cg == null) return;
-        cg.alpha = visible ? 1 : 0;
-        cg.interactable = visible;
-        cg.blocksRaycasts = visible;
-        // 只有需要显示时才 SetActive(true)，隐藏时 SetActive(false)
-        cg.gameObject.SetActive(visible);
-    }
-
-    private void BindUIComponentsSafe()
-    {
-        // 如果 loginButton 已经绑定且非空，说明之前已经成功过了，直接跳过，防止 Log 刷屏
-        if (loginButton != null && emailInput != null && passwordInput != null)
-        {
-            return;
-        }
-
-        Debug.Log("[TcbManager] 正在安全绑定 UI 组件...");
-        try
-        {
-            // 1. 查找 LoginPanel
-            if (loginCanvasGroup == null)
-            {
-                var allCGs = Resources.FindObjectsOfTypeAll<CanvasGroup>();
-                foreach (var cg in allCGs)
-                {
-                    if (cg.gameObject.scene.IsValid() && cg.gameObject.name == "LoginPanel")
-                    {
-                        loginCanvasGroup = cg;
-                        break;
-                    }
-                }
-            }
-
-            // 2. 绑定 LoginPanel 内的元素
-            if (loginCanvasGroup != null)
-            {
-                GameObject panelObj = loginCanvasGroup.gameObject;
-                var allInputs = panelObj.GetComponentsInChildren<TMP_InputField>(true);
-
-                // 优先按名字找
-                emailInput = allInputs.FirstOrDefault(x => x.name == "Input_Account");
-                passwordInput = allInputs.FirstOrDefault(x => x.name == "Input_Password");
-
-                // 暴力兜底：按顺序找
-                if (emailInput == null && allInputs.Length > 0)
-                {
-                    emailInput = allInputs[0];
-                    Debug.LogWarning($"未找到 Input_Account，自动使用第一个输入框: {emailInput.name}");
-                }
-                if (passwordInput == null && allInputs.Length > 1)
-                {
-                    passwordInput = allInputs[1];
-                    Debug.LogWarning($"未找到 Input_Password，自动使用第二个输入框: {passwordInput.name}");
-                }
-
-                var allBtns = panelObj.GetComponentsInChildren<Button>(true);
-                loginButton = allBtns.FirstOrDefault(x => x.name == "Btn_Login");
-                registerButton = allBtns.FirstOrDefault(x => x.name == "Btn_Register");
-                var allTexts = panelObj.GetComponentsInChildren<TextMeshProUGUI>(true);
-                statusText = allTexts.FirstOrDefault(x => x.name == "Text_Status");
-
-                if (loginButton != null)
-                {
-                    loginButton.onClick.RemoveAllListeners();
-                    loginButton.onClick.AddListener(LoginUser);
-                }
-                if (registerButton != null)
-                {
-                    registerButton.onClick.RemoveAllListeners();
-                    registerButton.onClick.AddListener(RegisterUser);
-                }
-            }
-            else
-            {
-                Debug.LogError("【严重】找不到 LoginPanel！");
-            }
-
-            // 3. 查找 MainPanel
-            if (mainMenuObjectGroup == null)
-            {
-                var allCGs = Resources.FindObjectsOfTypeAll<CanvasGroup>();
-                foreach (var cg in allCGs)
-                {
-                    if (cg.gameObject.scene.IsValid() && cg.gameObject.name == "MainPanel")
-                    {
-                        mainMenuObjectGroup = cg;
-                        break;
-                    }
-                }
-            }
-
-            // 4. 查找 LevelEditorButton
-            if (levelEditorButton == null)
-            {
-                var allBtns = Resources.FindObjectsOfTypeAll<Button>();
-                foreach (var btn in allBtns)
-                {
-                    if (btn.gameObject.scene.IsValid() && btn.gameObject.name == "LevelEditor_Button")
-                    {
-                        levelEditorButton = btn;
-                        break;
-                    }
-                }
-            }
-        }
-        catch (Exception e)
-        {
-            Debug.LogError("[TcbManager] UI 绑定异常: " + e.Message);
-        }
-    }
-
-    public void RegisterUser() { CallJsAuth(true); }
-    public void LoginUser()
-    {
-        Debug.Log("点击了登录按钮...");
-        CallJsAuth(false);
-    }
-
-    private void CallJsAuth(bool isRegister)
-    {
-        if (emailInput == null || passwordInput == null) BindUIComponentsSafe();
-        if (emailInput == null || passwordInput == null)
-        {
-            if (statusText) statusText.text = "UI 错误：找不到输入框";
-            return;
-        }
-
-        string email = emailInput.text;
-        string password = passwordInput.text;
-
-        if (statusText) statusText.text = "正在连接...";
-
+        Debug.Log($"[TcbManager] 开始注册: {email}");
+        
         if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(password))
         {
-            if (statusText) statusText.text = "账号或密码不能为空";
+            OnLoginFailed?.Invoke("账号或密码不能为空");
             return;
         }
+        
+        NativeBridge.Instance.RegisterUser(email, password, "OnLoginOrRegisterSuccess", gameObject.name, "OnAuthError");
+    }
 
-#if UNITY_WEBGL && !UNITY_EDITOR
-        if(isRegister) JsRegisterUser(email, password, gameObject.name, "OnLoginOrRegisterSuccess", "OnAuthError");
-        else JsLoginUser(email, password, gameObject.name, "OnLoginOrRegisterSuccess", "OnAuthError");
-#endif
+    /// <summary>
+    /// 用户登录
+    /// </summary>
+    public void Login(string email, string password)
+    {
+        Debug.Log($"[TcbManager] 开始登录: {email}");
+        
+        if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(password))
+        {
+            OnLoginFailed?.Invoke("账号或密码不能为空");
+            return;
+        }
+        
+        NativeBridge.Instance.LoginUser(email, password, "OnLoginOrRegisterSuccess", gameObject.name, "OnAuthError");
     }
 
     public void OnLoginOrRegisterSuccess(string uid)
     {
+        Debug.Log($"[TcbManager] 登录/注册成功: {uid}");
+        
         CurrentUid = uid;
-        if (statusText != null) statusText.text = "登录成功，加载数据...";
-
-        // 【核心修复】保存自动登录信息
+        
+        // 保存自动登录信息
         PlayerPrefs.SetString(PREF_AUTO_LOGIN_UID, uid);
         PlayerPrefs.Save();
+        
+        // 触发事件
+        OnLoginSuccess?.Invoke();
+        OnStatusMessageChanged?.Invoke("登录成功，加载数据...");
 
-#if UNITY_WEBGL && !UNITY_EDITOR
-        JsCheckAdminStatus(uid, gameObject.name, "OnAdminCheckResult", "OnAuthError");
-        JsGetUserProfile(uid, gameObject.name, "OnGetUserProfileSuccess", "OnAuthError");
-#endif
+        // 检查管理员状态和用户信息
+        NativeBridge.Instance.CheckAdminStatus(uid, "OnAdminCheckResult", gameObject.name, "OnAuthError");
+        NativeBridge.Instance.GetUserProfile(uid, gameObject.name, "OnGetUserProfileSuccess", "OnAuthError");
     }
 
     public void OnGetUserProfileSuccess(string json)
@@ -447,25 +285,19 @@ public class TcbManager : MonoBehaviour
         }
         else
         {
-#if UNITY_WEBGL && !UNITY_EDITOR
             string defaultName = "学员_" + CurrentUid.Substring(0, 4);
-            JsCreateUserProfile(CurrentUid, defaultName, gameObject.name, "OnCreateProfileSuccess", "OnAuthError");
-#endif
+            NativeBridge.Instance.CreateUserProfile(CurrentUid, defaultName, "OnCreateProfileSuccess", gameObject.name, "OnAuthError");
         }
     }
 
     public void OnCreateProfileSuccess(string msg)
     {
-#if UNITY_WEBGL && !UNITY_EDITOR
-        JsGetUserProfile(CurrentUid, gameObject.name, "OnGetUserProfileSuccess", "OnAuthError");
-#endif
+        NativeBridge.Instance.GetUserProfile(CurrentUid, gameObject.name, "OnGetUserProfileSuccess", "OnAuthError");
     }
 
     public void RequestUpdateUsername(string newName)
     {
-#if UNITY_WEBGL && !UNITY_EDITOR
-        JsUpdateUsername(CurrentUid, newName, gameObject.name, "OnUpdateNameSuccess", "OnAuthError");
-#endif
+        NativeBridge.Instance.UpdateUsername(CurrentUid, newName, "OnUpdateNameSuccess", gameObject.name, "OnAuthError");
     }
     public void OnUpdateNameSuccess(string msg) { RequestUpdateUsername(CurrentUid); }
 
@@ -476,30 +308,33 @@ public class TcbManager : MonoBehaviour
             IsAdmin = true;
             if (LevelManager.instance != null) LevelManager.IsAdmin = true;
             try { var d = JsonUtility.FromJson<AdminData>(jsonOrEmpty); AdminLevel = d.level; } catch { AdminLevel = 1; }
-            if (levelEditorButton) levelEditorButton.gameObject.SetActive(true);
+            Debug.Log($"[TcbManager] 管理员权限确认: Level {AdminLevel}");
         }
         else
         {
             IsAdmin = false;
             AdminLevel = 0;
             if (LevelManager.instance != null) LevelManager.IsAdmin = false;
-            if (levelEditorButton) levelEditorButton.gameObject.SetActive(false);
+            Debug.Log("[TcbManager] 非管理员用户");
         }
 
         PlayerPrefs.SetInt(PREF_IS_ADMIN, IsAdmin ? 1 : 0);
         PlayerPrefs.Save();
 
+        // 通知其他系统更新 UI
         var p = FindObjectOfType<UserProfileManager>();
         if (p) p.UpdateUI();
+        
+        // 触发事件，通知 UI 更新
+        OnAuthStateChanged?.Invoke(isLoggedIn);
 
+        // 加载关卡数据
         LoadLevelsSilent();
     }
 
     private void LoadLevelsSilent()
     {
-#if UNITY_WEBGL && !UNITY_EDITOR
-        JsGetLevels(gameObject.name, "OnGetLevelsSuccess", "OnAuthError");
-#endif
+        NativeBridge.Instance.GetLevels(gameObject.name, "OnGetLevelsSuccess", "OnAuthError");
     }
 
     public void OnGetLevelsSuccess(string jsonString)
@@ -508,6 +343,7 @@ public class TcbManager : MonoBehaviour
         {
             AllLevels = JsonUtility.FromJson<LevelDataCollection>(jsonString);
             if (AllLevels == null) AllLevels = new LevelDataCollection();
+            Debug.Log($"[TcbManager] 关卡数据加载成功: {AllLevels.levels.Count} 个关卡");
         }
         catch (Exception e)
         {
@@ -516,27 +352,25 @@ public class TcbManager : MonoBehaviour
         }
 
         isLoggedIn = true;
-
-        // 数据加载完毕，如果是当前在登录界面，则执行切换
-        if (loginCanvasGroup != null && loginCanvasGroup.gameObject.activeSelf)
-        {
-            StartCoroutine(TransitionTo(loginCanvasGroup, mainMenuObjectGroup));
-        }
+        
+        // 触发事件，通知 UI 更新
+        OnAuthStateChanged?.Invoke(true);
     }
 
     public void OnAuthError(string error)
     {
-        if (statusText != null) statusText.text = "错误：" + error;
-        Debug.LogError("[TcbManager] Auth Error: " + error);
+        Debug.LogError($"[TcbManager] Auth Error: {error}");
+        
+        // 触发事件
+        OnLoginFailed?.Invoke(error);
+        OnStatusMessageChanged?.Invoke("错误：" + error);
     }
 
     public void UploadNewLevel(string docId, LevelData data)
     {
         if (!IsAdmin) return;
-#if UNITY_WEBGL && !UNITY_EDITOR
         string jsonData = JsonUtility.ToJson(data);
-        JsUploadNewLevel(docId, jsonData, gameObject.name, "OnUploadSuccess", "OnAuthError");
-#endif
+        NativeBridge.Instance.UploadNewLevel(docId, jsonData, gameObject.name, "OnUploadSuccess", "OnAuthError");
     }
 
     public void OnUploadSuccess(string message)
@@ -552,45 +386,35 @@ public class TcbManager : MonoBehaviour
     {
         string rId = Guid.NewGuid().ToString();
         RegisterCallbacks(rId, (j) => { try { string w = "{\"data\":" + j + "}"; var r = JsonUtility.FromJson<DbResponseWrapper<T>>(w); s?.Invoke(r.data); } catch (Exception ex) { e?.Invoke(ex.Message); } }, e);
-#if UNITY_WEBGL && !UNITY_EDITOR
-        JsDbGetCollection(c, rId, gameObject.name, "OnDbGenericSuccess", "OnDbGenericError");
-#endif
+        NativeBridge.Instance.DbGetCollection(c, rId, "OnDbGenericSuccess", gameObject.name, "OnDbGenericError");
     }
 
     public void SetDocument<T>(string c, string d, T data, Action s = null, Action<string> e = null)
     {
         string rId = Guid.NewGuid().ToString(); TrySetId(data, d);
         RegisterCallbacks(rId, (m) => s?.Invoke(), e);
-#if UNITY_WEBGL && !UNITY_EDITOR
-        JsDbSetDocument(c, d, JsonUtility.ToJson(data), rId, gameObject.name, "OnDbGenericSuccess", "OnDbGenericError");
-#endif
+        NativeBridge.Instance.DbSetDocument(c, d, JsonUtility.ToJson(data), rId, "OnDbGenericSuccess", gameObject.name, "OnDbGenericError");
     }
 
     public void AddDocument<T>(string c, T data, Action s = null, Action<string> e = null)
     {
         string rId = Guid.NewGuid().ToString(); string d = TryGetId(data); if (string.IsNullOrEmpty(d)) d = Guid.NewGuid().ToString(); TrySetId(data, d);
         RegisterCallbacks(rId, (m) => s?.Invoke(), e);
-#if UNITY_WEBGL && !UNITY_EDITOR
-        JsDbAddDocument(c, JsonUtility.ToJson(data), rId, gameObject.name, "OnDbGenericSuccess", "OnDbGenericError");
-#endif
+        NativeBridge.Instance.DbAddDocument(c, JsonUtility.ToJson(data), rId, "OnDbGenericSuccess", gameObject.name, "OnDbGenericError");
     }
 
     public void DeleteDocument(string c, string d, Action s = null, Action<string> e = null)
     {
         string rId = Guid.NewGuid().ToString();
         RegisterCallbacks(rId, (m) => s?.Invoke(), e);
-#if UNITY_WEBGL && !UNITY_EDITOR
-        JsDbDeleteDocument(c, d, rId, gameObject.name, "OnDbGenericSuccess", "OnDbGenericError");
-#endif
+        NativeBridge.Instance.DbDeleteDocument(c, d, rId, "OnDbGenericSuccess", gameObject.name, "OnDbGenericError");
     }
 
     public void GetDocument<T>(string c, string d, Action<T> s, Action<string> e = null)
     {
         string rId = Guid.NewGuid().ToString();
         RegisterCallbacks(rId, (j) => { try { s?.Invoke(JsonUtility.FromJson<T>(j)); } catch { s?.Invoke(default(T)); } }, e);
-#if UNITY_WEBGL && !UNITY_EDITOR
-        JsDbGetDocument(c, d, rId, gameObject.name, "OnDbGenericSuccess", "OnDbGenericError");
-#endif
+        NativeBridge.Instance.DbGetDocument(c, d, rId, "OnDbGenericSuccess", gameObject.name, "OnDbGenericError");
     }
 
     private void TrySetId<T>(T data, string id) { try { var f = typeof(T).GetField("_id") ?? typeof(T).GetField("id"); if (f != null) f.SetValue(data, id); } catch { } }
@@ -612,29 +436,4 @@ public class TcbManager : MonoBehaviour
 
     private void RegisterCallbacks(string r, Action<string> s, Action<string> e) { dbSuccessCallbacks[r] = s; dbErrorCallbacks[r] = e; }
     private void CleanupCallbacks(string r) { dbSuccessCallbacks.Remove(r); dbErrorCallbacks.Remove(r); }
-
-    private IEnumerator TransitionTo(CanvasGroup from, CanvasGroup to)
-    {
-        yield return StartCoroutine(FadeCanvasGroup(from, 1, 0, panelFadeDuration));
-        yield return StartCoroutine(FadeCanvasGroup(to, 0, 1, panelFadeDuration));
-    }
-
-    private IEnumerator FadeCanvasGroup(CanvasGroup cg, float start, float end, float dur)
-    {
-        if (cg == null) yield break;
-        if (start > 0 || end > 0) cg.gameObject.SetActive(true);
-        cg.interactable = false;
-        float t = 0f;
-        while (t < dur)
-        {
-            t += Time.unscaledDeltaTime;
-            cg.alpha = Mathf.Lerp(start, end, t / dur);
-            yield return null;
-        }
-        cg.alpha = end;
-        bool isVisible = (end > 0.01f);
-        cg.interactable = isVisible;
-        cg.blocksRaycasts = isVisible;
-        if (!isVisible) cg.gameObject.SetActive(false);
-    }
 }

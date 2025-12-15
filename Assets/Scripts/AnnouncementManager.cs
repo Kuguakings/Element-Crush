@@ -4,13 +4,12 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System;
-using System.Runtime.InteropServices;
 
 public class AnnouncementManager : MonoBehaviour
 {
     public static AnnouncementManager instance;
 
-    [Header("UI цФ╟ЕрЩсц")]
+    [Header("UI О©╫О©╫О©╫О©╫О©╫О©╫О©╫")]
     public GameObject announcementButton;
     public GameObject redDot;
     public GameObject mainPanel;
@@ -18,13 +17,13 @@ public class AnnouncementManager : MonoBehaviour
     public GameObject detailPanel;
     public GameObject commentOptionPanel;
 
-    [Header("ап╠М UI")]
+    [Header("О©╫п╠О©╫ UI")]
     public Transform listContainer;
     public GameObject itemPrefab;
     public Button createButton;
     public Button mainListCloseButton;
 
-    [Header("╠Ю╪╜ UI")]
+    [Header("О©╫Ю╪╜ UI")]
     public TMP_InputField titleInput;
     public TMP_InputField tagInput;
     public TextMeshProUGUI editorNameText;
@@ -37,7 +36,7 @@ public class AnnouncementManager : MonoBehaviour
     public TextMeshProUGUI warningText;
     public Button closeEditorButton;
 
-    [Header("оЙгИ UI")]
+    [Header("О©╫О©╫О©╫О©╫ UI")]
     public TextMeshProUGUI detailTitle;
     public TextMeshProUGUI detailInfo;
     public TextMeshProUGUI detailContent;
@@ -47,13 +46,13 @@ public class AnnouncementManager : MonoBehaviour
     public Button postCommentButton;
     public Button closeDetailButton;
 
-    [Header("фюбш╡ывВ UI")]
+    [Header("О©╫О©╫О©╫ш╡О©╫О©╫О©╫ UI")]
     public TextMeshProUGUI commentOptionInfoText;
     public Button btnOptModify;
     public Button btnOptDelete;
     public Button btnOptBack;
 
-    [Header("еДжц")]
+    [Header("О©╫О©╫О©╫О©╫")]
     public float autoPopupIntervalHours = 12f;
     public float fadeDuration = 0.6f;
     private const string PREF_LAST_READ_TIME = "Announce_LastReadTime";
@@ -67,10 +66,6 @@ public class AnnouncementManager : MonoBehaviour
     private AnnouncementComment currentSelectedComment;
     private string tempContentCache = "";
     private Coroutine currentWarningRoutine;
-
-    // ║╬╨кпдпч╦╢║©╦дн╙рЩсц Native Prompt
-    [DllImport("__Internal")]
-    private static extern void JsShowNativePrompt(string existingText, string objectName, string callbackSuccess);
 
     void Awake()
     {
@@ -154,7 +149,7 @@ public class AnnouncementManager : MonoBehaviour
         string content = commentInput.text;
         if (string.IsNullOrEmpty(content)) return;
 
-        Debug.Log("уЩтз╥╒кмфюбш: " + content);
+        Debug.Log("О©╫О©╫О©╫з╥О©╫О©╫О©╫О©╫О©╫О©╫О©╫: " + content);
 
         AnnouncementComment newComment = new AnnouncementComment
         {
@@ -167,10 +162,10 @@ public class AnnouncementManager : MonoBehaviour
         };
 
         TcbManager.instance.AddDocument("announcement_comments", newComment, () => {
-            Debug.Log("фюбш╥╒кмЁи╧╕ё║");
+            Debug.Log("О©╫О©╫О©╫ш╥О©╫О©╫мЁи╧О©╫О©╫О©╫");
             commentInput.text = "";
             RefreshComments(currentEditingData._id);
-        }, (err) => Debug.LogError("фюбш╥╒кмй╖╟э: " + err));
+        }, (err) => Debug.LogError("О©╫О©╫О©╫ш╥О©╫О©╫О©╫й╖О©╫О©╫: " + err));
     }
 
     private void OnCommentRightClicked(AnnouncementComment comment)
@@ -178,7 +173,7 @@ public class AnnouncementManager : MonoBehaviour
         currentSelectedComment = comment;
         DateTime dt = DateTimeOffset.FromUnixTimeSeconds(comment.createdAt).LocalDateTime;
         if (commentOptionInfoText)
-            commentOptionInfoText.text = $"{comment.userNickname}\n╥╒╡╪сз {dt.ToString("MM.dd HH:mm")}";
+            commentOptionInfoText.text = $"{comment.userNickname}\nО©╫О©╫О©╫О©╫О©╫О©╫ {dt.ToString("MM.dd HH:mm")}";
         ShowPanel(commentOptionCG);
     }
 
@@ -190,15 +185,15 @@ public class AnnouncementManager : MonoBehaviour
 
         if (!isMine && !isAdmin)
         {
-            Debug.LogWarning("нчх╗и╬ЁЩкШхкфюбш");
+            Debug.LogWarning("О©╫О©╫х╗и╬О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫");
             return;
         }
 
         TcbManager.instance.DeleteDocument("announcement_comments", currentSelectedComment._id, () => {
-            Debug.Log("фюбши╬ЁЩЁи╧╕");
+            Debug.Log("О©╫О©╫О©╫О©╫и╬О©╫О©╫О©╫и╧О©╫");
             ClosePanel(commentOptionCG);
             RefreshComments(currentEditingData._id);
-        }, (err) => Debug.LogError("и╬ЁЩфюбшй╖╟э: " + err));
+        }, (err) => Debug.LogError("и╬О©╫О©╫О©╫О©╫О©╫О©╫й╖О©╫О©╫: " + err));
     }
 
     private void OpenModifyCommentInput()
@@ -208,12 +203,7 @@ public class AnnouncementManager : MonoBehaviour
         bool isAdmin = TcbManager.IsAdmin;
         if (!isMine && !isAdmin) return;
 
-#if UNITY_WEBGL && !UNITY_EDITOR
-        // ║╬пч╦╢║©й╧сц Native Prompt
-        JsShowNativePrompt(currentSelectedComment.content, gameObject.name, "OnModifyCommentSuccess");
-#else
-        OnModifyCommentSuccess(currentSelectedComment.content + " [пч╦д]");
-#endif
+        NativeBridge.Instance.ShowNativePrompt(currentSelectedComment.content, gameObject.name, "OnModifyCommentSuccess");
     }
 
     public void OnModifyCommentSuccess(string newContent)
@@ -227,10 +217,10 @@ public class AnnouncementManager : MonoBehaviour
             currentSelectedComment.modifiedInfo = "";
 
         TcbManager.instance.SetDocument("announcement_comments", currentSelectedComment._id, currentSelectedComment, () => {
-            Debug.Log("фюбшпч╦дЁи╧╕");
+            Debug.Log("О©╫О©╫О©╫О©╫О©╫ч╦дЁи╧О©╫");
             ClosePanel(commentOptionCG);
             RefreshComments(currentEditingData._id);
-        }, (err) => Debug.LogError("пч╦дфюбшй╖╟э: " + err));
+        }, (err) => Debug.LogError("О©╫ч╦О©╫О©╫О©╫О©╫О©╫й╖О©╫О©╫: " + err));
     }
 
     private void RefreshComments(string announcementId)
@@ -325,7 +315,7 @@ public class AnnouncementManager : MonoBehaviour
         currentEditingData = data;
         detailTitle.text = data.title;
         DateTime dt = DateTimeOffset.FromUnixTimeSeconds(data.updatedAt).LocalDateTime;
-        detailInfo.text = $"вВуъ: {data.authorName}   й╠╪Д: {dt.ToString("yyyy/MM/dd HH:mm")}";
+        detailInfo.text = $"О©╫О©╫О©╫О©╫: {data.authorName}   й╠О©╫О©╫: {dt.ToString("yyyy/MM/dd HH:mm")}";
         detailContent.text = data.content;
         RefreshComments(data._id);
     }
@@ -345,7 +335,7 @@ public class AnnouncementManager : MonoBehaviour
         if (!isDraft && !isSuperAdmin)
         {
             if (currentWarningRoutine != null) StopCoroutine(currentWarningRoutine);
-            currentWarningRoutine = StartCoroutine(ShowWarningAnim("х╗оч╡╩вЦё╨гКа╙о╣Ё╛╪╤╧эюМт╠╫Ьппи╬ЁЩ"));
+            currentWarningRoutine = StartCoroutine(ShowWarningAnim("х╗О©╫ч╡О©╫О©╫Цё╨О©╫О©╫О©╫О©╫о╣О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫т╠О©╫О©╫О©╫О©╫и╬О©╫О©╫"));
             return;
         }
         if (string.IsNullOrEmpty(currentEditingData._id))
@@ -416,7 +406,7 @@ public class AnnouncementManager : MonoBehaviour
     {
         while (editorPanel.activeSelf)
         {
-            if (editorNameText) editorNameText.text = "╠Ю╪╜: " + TcbManager.CurrentNickname;
+            if (editorNameText) editorNameText.text = "О©╫Ю╪╜: " + TcbManager.CurrentNickname;
             if (editorTimeText) editorTimeText.text = DateTime.Now.ToString("yyyy/MM/dd HH:mm");
             yield return new WaitForSeconds(1f);
         }
@@ -424,12 +414,7 @@ public class AnnouncementManager : MonoBehaviour
 
     private void OpenJsInput()
     {
-#if UNITY_WEBGL && !UNITY_EDITOR
-        // ║╬пч╦╢║©й╧сц Native Prompt
-        JsShowNativePrompt(tempContentCache, gameObject.name, "OnJsInputSuccess");
-#else
-        OnJsInputSuccess(tempContentCache + " (Simulated)");
-#endif
+        NativeBridge.Instance.ShowNativePrompt(tempContentCache, gameObject.name, "OnJsInputSuccess");
     }
 
     public void OnJsInputSuccess(string text)
@@ -438,7 +423,7 @@ public class AnnouncementManager : MonoBehaviour
         currentEditingData.content = text;
         contentPreviewText.text = text.Length > 100 ? text.Substring(0, 100) + "..." : text;
     }
-    // OnJsInputError ╡╩тыпХр╙ё╛╣╚хГ╧ШфДкШ╣ь╥╫╩╧тзрЩсцё╛©иртаТ╦Ж©у╨╞йЩё╛╩Руъж╠╫си╬╣Т║ёуБюОи╬╣Так║ё
+    // OnJsInputError О©╫О©╫О©╫О©╫О©╫О©╫р╙О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫ь╥О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫цёО©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫у╨О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫ж╠О©╫О©╫и╬О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫и╬О©╫О©╫О©╫к║О©╫
 
     private void SaveDraft()
     {

@@ -1,46 +1,74 @@
-// M1_EditorCell.cs (V2 - Ôö¼ÓÁË×ó¼üµã»÷±à¼­¹¦ÄÜ)
+// M1_EditorCell.cs (V2 - ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½à¼­ï¿½ï¿½ï¿½ï¿½)
 using UnityEngine;
 using UnityEngine.EventSystems;
-using TMPro; // ¡¾¡¾¡¾ ĞÂÔö ¡¿¡¿¡¿
+using TMPro; // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 [RequireComponent(typeof(TMPro.TMP_InputField))]
 public class M1_EditorCell : MonoBehaviour, IPointerClickHandler
 {
-    private LevelEditorManager editorManager;
-    private TMP_InputField myInputField; // ¡¾¡¾¡¾ ĞÂÔö ¡¿¡¿¡¿
+    private LevelEditor_Mode1 mode1Controller;
+    private TMP_InputField myInputField;
+    
+    public int row;
+    public int col;
+    public TMP_Text labelText; // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
-    // ¡¾¡¾¡¾ ĞÂÔö Awake() ¡¿¡¿¡¿
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ Awake() ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     void Awake()
     {
-        // »ñÈ¡¶Ô×Ô¼ºÊäÈë¿òµÄÒıÓÃ
+        // ï¿½ï¿½È¡ï¿½ï¿½ï¿½Ô¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         myInputField = GetComponent<TMP_InputField>();
     }
 
-    public void Setup(LevelEditorManager manager)
+    public void Setup(LevelEditor_Mode1 controller, int row, int col, string text)
     {
-        this.editorManager = manager;
+        this.mode1Controller = controller;
+        this.row = row;
+        this.col = col;
+        
+        if (myInputField != null)
+        {
+            myInputField.text = text;
+            myInputField.onValueChanged.AddListener(OnTextChanged);
+        }
+        
+        UpdateLabel();
+    }
+    
+    private void OnTextChanged(string newText)
+    {
+        if (mode1Controller != null)
+        {
+            mode1Controller.MarkLevelAsDirty();
+        }
+    }
+    
+    public void UpdateLabel()
+    {
+        if (labelText != null)
+        {
+            labelText.text = $"{row},{col}";
+        }
+    }
+    
+    public string GetText()
+    {
+        return myInputField != null ? myInputField.text : "";
     }
 
-    // ¡¾¡¾¡¾¡¾¡¾¡¾¡¾¡¾¡¾¡¾ ¹Ø¼üĞŞ¸Ä ¡¿¡¿¡¿¡¿¡¿¡¿¡¿¡¿¡¿¡¿
-    // ÎÒÃÇĞŞ¸ÄÁËÕâ¸öº¯Êı£¬ÈÃËüÄÜÍ¬Ê±´¦Àí¡°×ó¼ü¡±ºÍ¡°ÓÒ¼ü¡±
     public void OnPointerClick(PointerEventData eventData)
     {
-        if (editorManager == null || myInputField == null) return;
+        if (mode1Controller == null || myInputField == null) return;
 
-        // 1. ¼ì²éµã»÷µÄÊÇ·ñÊÇ¡°ÓÒ¼ü¡± (ÓÃÓÚÉ¾³ı)
+        // å³é”® - åˆ é™¤è¡Œ
         if (eventData.button == PointerEventData.InputButton.Right)
         {
-            // (¾ÉÂß¼­²»±ä)
-            editorManager.M1_OnRequestDeleteRow(this.gameObject, eventData.position);
+            mode1Controller.OnRequestDeleteRow(row);
         }
-        // 2. ¼ì²éµã»÷µÄÊÇ·ñÊÇ¡°×ó¼ü¡± (ÓÃÓÚ±à¼­)
+        // å·¦é”® - ç¼–è¾‘å•å…ƒæ ¼
         else if (eventData.button == PointerEventData.InputButton.Left)
         {
-            // ¡¾¡¾¡¾ ĞÂÂß¼­ ¡¿¡¿¡¿
-            // ¸æËß Manager£º¡°ÎÒÕâ¸öµ¥Ôª¸ñ±»µã»÷ÁË£¬ÇëÓÃÔ­ÉúHTML¸¡´°À´±à¼­ÎÒ£¡¡±
-            // ÎÒÃÇ°Ñ¡°ÎÒ×Ô¼º¡±(this.gameObject)ºÍ¡°ÎÒµ±Ç°µÄÎÄ±¾¡±´«µİ¹ıÈ¥
-            editorManager.M1_OnRequestEditCell(this.gameObject, myInputField.text);
+            mode1Controller.OnRequestEditCell(this.gameObject, myInputField.text);
         }
     }
-    // ¡¾¡¾¡¾¡¾¡¾¡¾¡¾¡¾¡¾¡¾ ĞŞ¸Ä½áÊø ¡¿¡¿¡¿¡¿¡¿¡¿¡¿¡¿¡¿¡¿
 }

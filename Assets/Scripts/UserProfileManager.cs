@@ -7,7 +7,6 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using UnityEngine.EventSystems;
-using System.Runtime.InteropServices;
 
 public class UserProfileManager : MonoBehaviour, IPointerClickHandler
 {
@@ -19,10 +18,6 @@ public class UserProfileManager : MonoBehaviour, IPointerClickHandler
     public Color superAdminColor = new Color(1f, 0.84f, 0f); // 金色(超级管理员) / Gold (super admin)
     public Color adminColor = new Color(0f, 0.8f, 1f);       // 蓝色(管理员) / Blue (admin)
     public Color userColor = new Color(0.8f, 0.8f, 0.8f);    // 灰色(普通用户) / Gray (normal user)
-
-    // WebGL专用：调用JavaScript的原生输入框 / WebGL only: Call JavaScript native input
-    [DllImport("__Internal")]
-    private static extern void JsShowNativePrompt(string existingText, string objectName, string callbackSuccess);
 
     void Start()
     {
@@ -78,12 +73,7 @@ public class UserProfileManager : MonoBehaviour, IPointerClickHandler
             Debug.Log("右键点击用户头像，打开改名窗口... / Right clicked user avatar, opening rename window...");
             string currentName = TcbManager.CurrentNickname;
 
-#if UNITY_WEBGL && !UNITY_EDITOR
-            // WebGL构建：调用JavaScript原生输入框 / WebGL build: Call JavaScript native input
-            JsShowNativePrompt(currentName, gameObject.name, "OnReceiveNewName");
-#else
-            Debug.LogWarning("编辑器不支持 WebGL 原生输入框功能 / Editor doesn't support WebGL native input");
-#endif
+            NativeBridge.Instance.ShowNativePrompt(currentName, gameObject.name, "OnReceiveNewName");
         }
     }
 

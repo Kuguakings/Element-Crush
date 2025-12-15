@@ -1,21 +1,16 @@
 using UnityEngine;
 using TMPro;
 using UnityEngine.EventSystems;
-using System.Runtime.InteropServices;
 
 [RequireComponent(typeof(TMP_InputField))]
 public class HtmlInputBridge : MonoBehaviour, IPointerClickHandler
 {
     private TMP_InputField inputField;
 
-    // ¡¾ºËÐÄÐÞ¸´¡¿ÒýÈë Native Prompt
-    [DllImport("__Internal")]
-    private static extern void JsShowNativePrompt(string existingText, string objectName, string callbackSuccess);
-
     void Start()
     {
         inputField = GetComponent<TMP_InputField>();
-        // ÉèÎªÖ»¶Á£¬µã»÷Ê±Ö»´¥·¢ÎÒÃÇµÄµ¯´°£¬²»´¥·¢ÊÖ»ú¼üÅÌ
+        // ï¿½ï¿½ÎªÖ»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±Ö»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÇµÄµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö»ï¿½ï¿½ï¿½ï¿½ï¿½
         inputField.readOnly = true;
     }
 
@@ -27,23 +22,16 @@ public class HtmlInputBridge : MonoBehaviour, IPointerClickHandler
         string currentText = inputField.text;
         string myGameObjectName = gameObject.name;
 
-        Debug.Log($"[HtmlInputBridge] ÕýÔÚºô½ÐÔ­Éú Prompt: {myGameObjectName}");
+        Debug.Log($"[HtmlInputBridge] ï¿½ï¿½ï¿½Úºï¿½ï¿½ï¿½Ô­ï¿½ï¿½ Prompt: {myGameObjectName}");
 
-#if UNITY_WEBGL && !UNITY_EDITOR
-        // ¡¾ºËÐÄÐÞ¸´¡¿µ÷ÓÃÔ­Éúµ¯´°
-        JsShowNativePrompt(currentText, myGameObjectName, "OnHtmlInputSuccess");
-#else
-        // ±à¼­Æ÷Ä£Ê½ÏÂÔÊÐíÖ±½ÓÊäÈë
-        inputField.readOnly = false;
-        inputField.ActivateInputField();
-#endif
+        NativeBridge.Instance.ShowNativePrompt(currentText, myGameObjectName, "OnHtmlInputSuccess");
     }
 
     public void OnHtmlInputSuccess(string newText)
     {
-        Debug.Log($"[HtmlInputBridge] ÊÕµ½·µ»ØÎÄ±¾: {newText}");
+        Debug.Log($"[HtmlInputBridge] ï¿½Õµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä±ï¿½: {newText}");
         inputField.text = newText;
-        // ´¥·¢ÊÂ¼þ£¬Í¨ÖªÆäËû½Å±¾Êý¾Ý±äÁË
+        // ï¿½ï¿½ï¿½ï¿½ï¿½Â¼ï¿½ï¿½ï¿½Í¨Öªï¿½ï¿½ï¿½ï¿½ï¿½Å±ï¿½ï¿½ï¿½ï¿½Ý±ï¿½ï¿½ï¿½
         inputField.onValueChanged.Invoke(newText);
         inputField.onEndEdit.Invoke(newText);
     }

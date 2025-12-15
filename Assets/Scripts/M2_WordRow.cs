@@ -6,33 +6,33 @@ using UnityEngine.UI;
 using TMPro;
 
 /// <summary>
-/// ¡¾¡¾¡¾Ä£Ê½2 V3.0.4¡¿¡¿¡¿
-/// ¸½¼ÓÔÚ M2_WordRow_Prefab (ÖÐ²¿¡°´ÊÓï±à¼­¡±ÐÐ) ÉÏ
+/// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä£Ê½2 V3.0.4ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+/// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ M2_WordRow_Prefab (ï¿½Ð²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½à¼­ï¿½ï¿½ï¿½ï¿½) ï¿½ï¿½
 /// </summary>
 public class M2_WordRow : MonoBehaviour
 {
-    [Header("UI ÒýÓÃ")]
+    [Header("UI ï¿½ï¿½ï¿½ï¿½")]
     public TextMeshProUGUI orderText;
     public TMP_InputField wordInput;
     public Button moveUpButton;
     public Button moveDownButton;
-    public Toggle selectionToggle; // <--- ¡¾ÐÂÔö¡¿Toggle ÒýÓÃ
+    public Toggle selectionToggle; // <--- ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Toggle ï¿½ï¿½ï¿½ï¿½
 
-    [Header("Ñ¡ÖÐ¸ßÁÁ")]
+    [Header("Ñ¡ï¿½Ð¸ï¿½ï¿½ï¿½")]
     public Image selectionHighlight;
-    // public Button clickReceiverButton; // <--- ¡¾ÒÑÒÆ³ý¡¿¾ÉµÄµã»÷½ÓÊÕ°´Å¥
+    // public Button clickReceiverButton; // <--- ï¿½ï¿½ï¿½ï¿½ï¿½Æ³ï¿½ï¿½ï¿½ï¿½ÉµÄµï¿½ï¿½ï¿½ï¿½ï¿½Õ°ï¿½Å¥
 
-    private LevelEditorManager editorManager;
-    private bool isManagerUpdatingToggle = false; // <--- ¡¾ÐÂÔö¡¿Toggle Ëø
+    private LevelEditor_Mode2 mode2Controller;
+    private bool isManagerUpdatingToggle = false;
 
-    public void Setup(LevelEditorManager manager, int order, string word)
+    public void Setup(LevelEditor_Mode2 controller, int order, string word)
     {
-        this.editorManager = manager;
+        this.mode2Controller = controller;
 
-        // 1. Ìî³äÊý¾Ý
+        // 1. ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         wordInput.text = word;
 
-        // 2. °ó¶¨°´Å¥ÊÂ¼þ
+        // 2. ï¿½ó¶¨°ï¿½Å¥ï¿½Â¼ï¿½
         if (moveUpButton != null)
         {
             moveUpButton.onClick.AddListener(OnMoveUp);
@@ -42,80 +42,79 @@ public class M2_WordRow : MonoBehaviour
             moveDownButton.onClick.AddListener(OnMoveDown);
         }
 
-        // ¡¾ÐÂÔö¡¿°ó¶¨ Toggle ÊÂ¼þ£¬Ìæ»»¾ÉµÄ clickReceiverButton Âß¼­
+        // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Toggle ï¿½Â¼ï¿½ï¿½ï¿½ï¿½æ»»ï¿½Éµï¿½ clickReceiverButton ï¿½ß¼ï¿½
         if (selectionToggle != null)
         {
             selectionToggle.onValueChanged.AddListener(OnToggleChanged);
         }
 
-        // 3. °ó¶¨¡°Ôà¼ì²é¡±
+        // 3. ï¿½ó¶¨¡ï¿½ï¿½ï¿½ï¿½é¡±
         if (wordInput != null)
         {
             wordInput.onValueChanged.AddListener(OnWordChanged);
         }
 
-        // 4. Ä¬ÈÏÒþ²Ø¸ßÁÁ
+        // 4. Ä¬ï¿½ï¿½ï¿½ï¿½ï¿½Ø¸ï¿½ï¿½ï¿½
         SetSelected(false);
 
-        // 5. V3.0.3 Ë¢ÐÂ Bug ÐÞ¸´ (²»±ä)
+        // 5. V3.0.3 Ë¢ï¿½ï¿½ Bug ï¿½Þ¸ï¿½ (ï¿½ï¿½ï¿½ï¿½)
         UpdateVisuals(order, false, false);
     }
 
     private void OnWordChanged(string s)
     {
-        if (editorManager != null)
+        if (mode2Controller != null)
         {
-            editorManager.MarkLevelAsDirty();
+            mode2Controller.MarkLevelAsDirty();
         }
     }
 
-    // ¡¾ÐÂÔö¡¿Toggle ÊÂ¼þ´¦ÀíÆ÷
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Toggle ï¿½Â¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     private void OnToggleChanged(bool isOn)
     {
-        if (isManagerUpdatingToggle) return; // ºöÂÔ Manager ´¥·¢µÄÊÂ¼þ
+        if (isManagerUpdatingToggle) return;
 
-        if (editorManager != null)
+        if (mode2Controller != null)
         {
-            // Í¨Öª Manager ½øÐÐ¡°µ¥Ñ¡¡±Âß¼­
-            editorManager.M2_OnSelectWordRowToggle(this, isOn);
+            mode2Controller.OnSelectWordRowToggle(this, isOn);
         }
     }
 
     private void OnMoveUp()
     {
-        if (editorManager != null)
+        if (mode2Controller != null)
         {
-            editorManager.M2_OnRequestMoveWord(this, -1);
+            mode2Controller.OnRequestMoveWord(this, -1);
         }
     }
 
     private void OnMoveDown()
     {
-        if (editorManager != null)
+        if (mode2Controller != null)
         {
-            editorManager.M2_OnRequestMoveWord(this, 1);
+            mode2Controller.OnRequestMoveWord(this, 1);
         }
     }
 
-    // ¡¾ÐÞ¸Ä¡¿SetSelected ÏÖÔÚ¿ØÖÆ Toggle ×´Ì¬ºÍËø
+    // ï¿½ï¿½ï¿½Þ¸Ä¡ï¿½SetSelected ï¿½ï¿½ï¿½Ú¿ï¿½ï¿½ï¿½ Toggle ×´Ì¬ï¿½ï¿½ï¿½ï¿½
     public void SetSelected(bool isSelected)
     {
-        // 1. ÉÏËø
+        // 1. ï¿½ï¿½ï¿½ï¿½
         isManagerUpdatingToggle = true;
 
-        // 2. ¿ØÖÆ Toggle ×´Ì¬
+        // 2. ï¿½ï¿½ï¿½ï¿½ Toggle ×´Ì¬
         if (selectionToggle != null)
         {
             selectionToggle.isOn = isSelected;
         }
 
-        // 3. ¿ØÖÆ¸ßÁÁ (Ê¹ÓÃ .enabled ÐÞ¸´ÁËÒþ²ØÕû¸öÐÐµÄ Bug)
+        // 3. ï¿½ï¿½ï¿½Æ¸ï¿½ï¿½ï¿½ (Ê¹ï¿½ï¿½ .enabled ï¿½Þ¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ðµï¿½ Bug)
         if (selectionHighlight != null)
         {
             selectionHighlight.enabled = isSelected;
         }
 
-        // 4. ½âËø
+        // 4. ï¿½ï¿½ï¿½ï¿½
         isManagerUpdatingToggle = false;
     }
 
