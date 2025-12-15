@@ -1,57 +1,59 @@
+/// <summary>
+/// ç”¨æˆ·èµ„æ–™ç®¡ç†å™¨ / User Profile Manager
+/// ç®¡ç†ä¸»èœå•å³ä¸Šè§’çš„"ç”¨æˆ·ä¿¡æ¯é¢æ¿" / Manages the "User Info Panel" in the top-right of main menu
+/// æ˜¾ç¤ºç”¨æˆ·æ˜µç§°ã€è§’è‰²ï¼ˆç®¡ç†å‘˜/å­¦å‘˜ï¼‰/ Displays username, role (admin/student)
+/// </summary>
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using UnityEngine.EventSystems;
 using System.Runtime.InteropServices;
 
-/// <summary>
-/// ¹ÒÔØÔÚÖ÷²Ëµ¥ÓÒÉÏ½ÇµÄ¡°ÓÃ»§ĞÅÏ¢Ãæ°å¡±ÉÏ
-/// </summary>
 public class UserProfileManager : MonoBehaviour, IPointerClickHandler
 {
-    [Header("UI ÒıÓÃ")]
-    public TextMeshProUGUI usernameText; // ÍÏ×§ÏÔÊ¾êÇ³ÆµÄ Text
-    public TextMeshProUGUI roleText;     // ÍÏ×§ÏÔÊ¾Éí·İ(¹ÜÀíÔ±/Ñ§Ô±)µÄ Text
+    [Header("UI ç»„ä»¶ / UI Components")]
+    public TextMeshProUGUI usernameText; // ç”¨äºæ˜¾ç¤ºæ˜µç§°çš„æ–‡æœ¬ / Text for displaying username
+    public TextMeshProUGUI roleText;     // ç”¨äºæ˜¾ç¤ºè§’è‰²(ç®¡ç†å‘˜/å­¦å‘˜)çš„æ–‡æœ¬ / Text for displaying role (admin/student)
 
-    [Header("ÑÕÉ«ÅäÖÃ")]
-    public Color superAdminColor = new Color(1f, 0.84f, 0f); // ½ğÉ«
-    public Color adminColor = new Color(0f, 0.8f, 1f);       // À¶É«
-    public Color userColor = new Color(0.8f, 0.8f, 0.8f);    // »ÒÉ«
+    [Header("è§’è‰²é¢œè‰² / Role Colors")]
+    public Color superAdminColor = new Color(1f, 0.84f, 0f); // é‡‘è‰²(è¶…çº§ç®¡ç†å‘˜) / Gold (super admin)
+    public Color adminColor = new Color(0f, 0.8f, 1f);       // è“è‰²(ç®¡ç†å‘˜) / Blue (admin)
+    public Color userColor = new Color(0.8f, 0.8f, 0.8f);    // ç°è‰²(æ™®é€šç”¨æˆ·) / Gray (normal user)
 
-    // ¡¾ºËĞÄĞŞ¸´£ºÒıÈë Native Prompt (Ô­Éúµ¯´°)¡¿
+    // WebGLä¸“ç”¨ï¼šè°ƒç”¨JavaScriptçš„åŸç”Ÿè¾“å…¥æ¡† / WebGL only: Call JavaScript native input
     [DllImport("__Internal")]
     private static extern void JsShowNativePrompt(string existingText, string objectName, string callbackSuccess);
 
     void Start()
     {
-        // ³õÊ¼¸üĞÂÒ»´Î UI
+        // ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ UI
         UpdateUI();
     }
 
     public void UpdateUI()
     {
-        // 1. ¸üĞÂÓÃ»§Ãû
+        // 1. ï¿½ï¿½ï¿½ï¿½ï¿½Ã»ï¿½ï¿½ï¿½
         if (!string.IsNullOrEmpty(TcbManager.CurrentNickname))
         {
             usernameText.text = TcbManager.CurrentNickname;
         }
         else
         {
-            usernameText.text = "¼ÓÔØÖĞ...";
+            usernameText.text = "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½...";
         }
 
-        // 2. ¸üĞÂ½ÇÉ«/È¨ÏŞÏÔÊ¾
+        // 2. ï¿½ï¿½ï¿½Â½ï¿½É«/È¨ï¿½ï¿½ï¿½ï¿½Ê¾
         if (TcbManager.IsAdmin)
         {
             if (TcbManager.AdminLevel >= 999)
             {
-                roleText.text = "³¬¼¶¹ÜÀíÔ±";
+                roleText.text = "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô±";
                 roleText.color = superAdminColor;
                 usernameText.color = superAdminColor;
             }
             else
             {
-                roleText.text = "¹ÜÀíÔ±";
+                roleText.text = "ï¿½ï¿½ï¿½ï¿½Ô±";
                 roleText.color = adminColor;
                 usernameText.color = adminColor;
             }
@@ -60,40 +62,48 @@ public class UserProfileManager : MonoBehaviour, IPointerClickHandler
         {
             roleText.text = "Ñ§Ô±";
             roleText.color = userColor;
-            usernameText.color = Color.white; // ÆÕÍ¨ÓÃ»§Ãû×Ö°×É«
+            usernameText.color = Color.white; // ï¿½ï¿½Í¨ï¿½Ã»ï¿½ï¿½ï¿½ï¿½Ö°ï¿½É«
         }
     }
 
-    // ´¦Àíµã»÷ÊÂ¼ş
+    /// <summary>
+    /// å¤„ç†ç‚¹å‡»äº‹ä»¶ / Handle Click Event
+    /// å³é”®ç‚¹å‡»æ‰“å¼€æ”¹åå¯¹è¯æ¡† / Right click to open rename dialog
+    /// </summary>
     public void OnPointerClick(PointerEventData eventData)
     {
-        // Ö»ÓĞÓÒ¼üµã»÷²Å´¥·¢¸ÄÃû
+        // åªæœ‰å³é”®æ‰è§¦å‘æ”¹å / Only right click triggers rename
         if (eventData.button == PointerEventData.InputButton.Right)
         {
-            Debug.Log("ÓÒ¼üµã»÷ÓÃ»§Í·Ïñ£¬´ò¿ª¸ÄÃû¿ò...");
+            Debug.Log("å³é”®ç‚¹å‡»ç”¨æˆ·å¤´åƒï¼Œæ‰“å¼€æ”¹åçª—å£... / Right clicked user avatar, opening rename window...");
             string currentName = TcbManager.CurrentNickname;
 
 #if UNITY_WEBGL && !UNITY_EDITOR
-            // ¡¾ĞŞ¸´¡¿µ÷ÓÃÔ­Éúä¯ÀÀÆ÷ÊäÈë¿ò
+            // WebGLæ„å»ºï¼šè°ƒç”¨JavaScriptåŸç”Ÿè¾“å…¥æ¡† / WebGL build: Call JavaScript native input
             JsShowNativePrompt(currentName, gameObject.name, "OnReceiveNewName");
 #else
-            Debug.LogWarning("±à¼­Æ÷²»Ö§³Ö WebGL ÊäÈë¿ò£¬Çë´ò°ü²âÊÔ");
+            Debug.LogWarning("ç¼–è¾‘å™¨ä¸æ”¯æŒ WebGL åŸç”Ÿè¾“å…¥æ¡†åŠŸèƒ½ / Editor doesn't support WebGL native input");
 #endif
         }
     }
 
-    // ½ÓÊÕ JS ·µ»ØµÄĞÂÃû×Ö
+    /// <summary>
+    /// æ¥æ”¶JavaScriptå›è°ƒçš„æ–°åå­— / Receive New Name from JavaScript Callback
+    /// ç”±WebGLçš„JavaScriptä»£ç è°ƒç”¨ / Called by WebGL JavaScript code
+    /// </summary>
+    /// <param name="newName">ç”¨æˆ·è¾“å…¥çš„æ–°åå­— / User's input new name</param>
     public void OnReceiveNewName(string newName)
     {
+        // æ£€æŸ¥æœ‰æ•ˆæ€§ / Check validity
         if (string.IsNullOrWhiteSpace(newName)) return;
 
-        // ¼òµ¥ÏŞÖÆ³¤¶È£¬·ÀÖ¹ UI ±¬µô
+        // é™åˆ¶é•¿åº¦ï¼Œé˜²æ­¢ UI æº¢å‡º / Limit length to prevent UI overflow
         if (newName.Length > 12) newName = newName.Substring(0, 12);
 
-        // ±¾µØÏÈ¸üĞÂ£¬ÈÃÓÃ»§¸Ğ¾õºÜ¿ì
+        // å…ˆæ›´æ–°UIï¼Œè®©ç”¨æˆ·ç«‹å³çœ‹åˆ°åé¦ˆ / Update UI first for immediate user feedback
         usernameText.text = newName;
 
-        // ·¢ËÍ¸øºó¶Ë±£´æ
+        // åŒæ­¥åˆ°åç«¯æ•°æ®åº“ / Sync to backend database
         if (TcbManager.instance != null)
         {
             TcbManager.instance.RequestUpdateUsername(newName);
