@@ -27,7 +27,7 @@ This project uses a hybrid architecture. The C# code cannot talk to the cloud di
 ### 2. Standard Folders
 * **`Assets/Scripts/`**: Game Logic (C#).
 * **`Assets/Resources/`**: Data files for HSK Levels.
-* **`Assets/Scenes/`**: Game Levels.
+* **`Assets/Scenes/`**: Game scene.
 
 ---
 
