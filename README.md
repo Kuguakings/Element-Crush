@@ -57,6 +57,27 @@ The default view will be empty.
 1.  Go to `Assets` -> `Scenes`.
 2.  Double-click the main scene file.
 
+# 🛠️ Development & Deployment (Strict Workflow)
+
+### ⚠️ IMPORTANT: How to Build (Clean Build)
+To prevent errors and "ghost files", please follow this specific workflow when updating the game:
+
+1.  **🧹 CLEAN FIRST (Crucial Step):**
+    Before clicking "Build", open your project folder and **DELETE all files inside the `docs/` folder**.
+    (请务必先手动删除 `docs` 文件夹内的所有内容，确保空文件夹状态。)
+
+2.  **🏗️ Build:**
+    * In Unity, go to `File` -> `Build Settings`.
+    * Click **Build**.
+    * Select the empty **`docs`** folder.
+
+3.  **🚀 Push to Update:**
+    * Git will detect deleted old files and added new files.
+    * Commit & Push.
+    * Netlify will auto-deploy the new version.
+
+---
+
 Let's make a great game! 🚀
 
 ---
